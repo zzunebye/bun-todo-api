@@ -1,14 +1,7 @@
 import type { AddTodoRequest, Todo, UpdateTodoRequest } from "./type";
 
-const fakeTodo: Todo = {
-    id: 1,
-    title: "Sample Todo",
-    completed: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-};
 
-const todos: Todo[] = [];
+const todoInMemory: Todo[] = [];
 
 const server = Bun.serve({
     port: 3000,
