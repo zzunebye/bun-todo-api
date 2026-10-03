@@ -1,7 +1,5 @@
-import type { AddTodoRequest, Todo, UpdateTodoRequest } from "./type";
-
-
-const todoInMemory: Todo[] = [];
+import { store } from "./db";
+import type { AddTodoRequest, UpdateTodoRequest } from "./type";
 
 const server = Bun.serve({
     port: 3000,
@@ -20,16 +18,10 @@ const server = Bun.serve({
                 const completed = url.searchParams.get('completed');
                 const search = url.searchParams.get('search');
                 console.log(page, limit, completed, search);
-                const filteredTodos: Todo[] = todos.filter(todo => {
-                    if (completed) {
-                        return todo.completed === (completed === 'true');
-                    }
-                    if (search && search.length > 0) {
-                        return todo.title.toLowerCase().includes(search.toLowerCase());
-                    }
-                    return true;
-                });
-                return Response.json(filteredTodos)
+                return Response.json(store.list({
+                    completed: completed === null ? undefined : completed === "true",
+                    search: search && search.length > 0 ? search : undefined,
+                }))
             },
             POST: async req => {
                 // Parse the JSON body more safely and add a type assertion
@@ -43,22 +35,12 @@ const server = Bun.serve({
                     return Response.json({ error: "Title is required" }, { status: 400 });
                 }
 
-                const newTodo: Todo = {
-                    id: todos.length + 1,
-                    title: body.title,
-                    completed: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                };
-
-                todos.push(newTodo);
-                return Response.json(newTodo, { status: 201 })
+                return Response.json(store.add(body.title), { status: 201 })
             },
         },
         "/todos/:id": {
             GET: (req) => {
-                console.log(req.params.id)
-                const todo = todos.find(todo => todo.id === parseInt(req.params.id));
+                const todo = store.get(parseInt(req.params.id));
                 if (!todo) {
                     return Response.json({ error: "Todo not found" }, { status: 404 });
                 }
@@ -66,21 +48,17 @@ const server = Bun.serve({
             },
             PATCH: async (req) => {
                 const body = await req.json() as UpdateTodoRequest;
-                const todo = todos.find(todo => todo.id === parseInt(req.params.id));
+                const todo = store.update(parseInt(req.params.id), body);
                 if (!todo) {
                     return Response.json({ error: "Todo not found" }, { status: 404 });
                 }
-                todo.title = body.title;
-                todo.completed = body.completed;
-                todo.updatedAt = new Date().toISOString();
                 return Response.json(todo);
             },
             DELETE: (req) => {
-                const todo = todos.find(todo => todo.id === parseInt(req.params.id));
-                if (!todo) {
+                const removed = store.remove(parseInt(req.params.id));
+                if (!removed) {
                     return Response.json({ error: "Todo not found" }, { status: 404 });
                 }
-                todos.splice(todos.indexOf(todo), 1);
                 return Response.json(null, { status: 204 });
             }
         },
