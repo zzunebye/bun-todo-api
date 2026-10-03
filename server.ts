@@ -20,7 +20,24 @@ const server = Bun.serve({
         "/": () => new Response("Welcome to the Bun demo Todo API!"),
         "/health": () => Response.json({ "status": "ok" }),
         "/todos": {
-            GET: () => Response.json(todos),
+            GET: (req) => {
+                const url = new URL(req.url);
+                const page = url.searchParams.get('page');
+                const limit = url.searchParams.get('limit');
+                const completed = url.searchParams.get('completed');
+                const search = url.searchParams.get('search');
+                console.log(page, limit, completed, search);
+                const filteredTodos: Todo[] = todos.filter(todo => {
+                    if (completed) {
+                        return todo.completed === (completed === 'true');
+                    }
+                    if (search && search.length > 0) {
+                        return todo.title.toLowerCase().includes(search.toLowerCase());
+                    }
+                    return true;
+                });
+                return Response.json(filteredTodos)
+            },
             POST: async req => {
                 // Parse the JSON body more safely and add a type assertion
                 const body = await req.json() as AddTodoRequest;
