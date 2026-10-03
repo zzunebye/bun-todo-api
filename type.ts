@@ -14,3 +14,12 @@ export type Todo = {
 //     createdAt: string,
 //     updatedAt: string,
 // }
+
+export type AddTodoRequest = {
+    title: string,
+}
+
+export type UpdateTodoRequest = {
+    title: string,
+    completed: boolean,
+}

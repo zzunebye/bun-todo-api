@@ -1,4 +1,4 @@
-import type { Todo } from "./type";
+import type { AddTodoRequest, Todo, UpdateTodoRequest } from "./type";
 
 const fakeTodo: Todo = {
     id: 1,
@@ -8,21 +8,13 @@ const fakeTodo: Todo = {
     updatedAt: new Date().toISOString(),
 };
 
-type AddTodoRequest = {
-    title: string,
-}
-
-type UpdateTodoRequest = {
-    title: string,
-    completed: boolean,
-}
 const todos: Todo[] = [];
 
 const server = Bun.serve({
     port: 3000,
-    // this is the function that will be called when a request is made to the server
+    // this is the function that will be called when a request is made to the server but no route found
     fetch(req) {
-        return new Response("Hello from Bun")
+        return new Response("Route Not Found in this API")
     },
     routes: {
         "/": () => new Response("Welcome to the Bun demo Todo API!"),
