@@ -16,7 +16,7 @@ type UpdateTodoRequest = {
     title: string,
     completed: boolean,
 }
-const todos = []
+const todos: Todo[] = [];
 
 const server = Bun.serve({
     port: 3000,
@@ -28,7 +28,7 @@ const server = Bun.serve({
         "/": () => new Response("Welcome to the Bun demo Todo API!"),
         "/health": () => Response.json({ "status": "ok" }),
         "/todos": {
-            GET: () => Response.json([fakeTodo, { ...fakeTodo, id: 2, title: "Second Todo" }]),
+            GET: () => Response.json(todos),
             POST: async req => {
                 // Parse the JSON body more safely and add a type assertion
                 const body = await req.json() as AddTodoRequest;
@@ -50,23 +50,35 @@ const server = Bun.serve({
                 };
 
                 todos.push(newTodo);
-                // const newTodo = {
-                //     title: body.title
-
-                // }
                 return Response.json(newTodo, { status: 201 })
             },
         },
         "/todos/:id": {
             GET: (req) => {
                 console.log(req.params.id)
-                return Response.json({ ...fakeTodo, id: req.params.id });
+                const todo = todos.find(todo => todo.id === parseInt(req.params.id));
+                if (!todo) {
+                    return Response.json({ error: "Todo not found" }, { status: 404 });
+                }
+                return Response.json(todo);
             },
             PATCH: async (req) => {
                 const body = await req.json() as UpdateTodoRequest;
-                return Response.json({ ...fakeTodo, id: req.params.id });
+                const todo = todos.find(todo => todo.id === parseInt(req.params.id));
+                if (!todo) {
+                    return Response.json({ error: "Todo not found" }, { status: 404 });
+                }
+                todo.title = body.title;
+                todo.completed = body.completed;
+                todo.updatedAt = new Date().toISOString();
+                return Response.json(todo);
             },
             DELETE: (req) => {
+                const todo = todos.find(todo => todo.id === parseInt(req.params.id));
+                if (!todo) {
+                    return Response.json({ error: "Todo not found" }, { status: 404 });
+                }
+                todos.splice(todos.indexOf(todo), 1);
                 return Response.json(null, { status: 204 });
             }
         },
